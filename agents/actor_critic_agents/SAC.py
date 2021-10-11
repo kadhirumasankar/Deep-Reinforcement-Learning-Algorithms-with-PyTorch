@@ -201,5 +201,5 @@ class SAC(Base_Agent):
         """Prints a summary of the latest episode"""
         print(" ")
         print("----------------------------")
-        print(f"Episode evaluation score {self.total_episode_score_so_far}")
+        print(f"Episode {self.episode_number + 1} evaluation score {self.total_episode_score_so_far}")
         print("----------------------------")
