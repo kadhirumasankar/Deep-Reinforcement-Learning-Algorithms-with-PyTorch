@@ -10,6 +10,7 @@ import time
 from nn_builder.pytorch.NN import NN
 # from tensorboardX import SummaryWriter
 from torch.optim import optimizer
+from torch.utils.tensorboard import SummaryWriter, writer
 
 class Base_Agent(object):
 
@@ -42,6 +43,7 @@ class Base_Agent(object):
         self.visualise_results_boolean = config.visualise_individual_results
         self.global_step_number = 0
         self.turn_off_exploration = False
+        self.tensorboard_writer = SummaryWriter()
         gym.logger.set_level(40)  # stops it from printing an unnecessary warning
         self.log_game_info()
 
@@ -204,6 +206,7 @@ class Base_Agent(object):
         """Saves and prints results of the game"""
         self.save_result()
         self.print_rolling_result()
+        self.log_to_tensorboard()
 
     def save_result(self):
         """Saves the result of an episode of the game"""
@@ -222,6 +225,12 @@ class Base_Agent(object):
     def print_rolling_result(self):
         """Prints out the latest episode results"""
         print(f"\r Episode {len(self.game_full_episode_scores)}, Score: {self.game_full_episode_scores[-1]: .2f}, Max score seen: {self.max_episode_score_seen: .2f}, Rolling score: {self.rolling_results[-1]: .2f}, Max rolling score seen: {self.max_rolling_score_seen: .2f}")
+
+    def log_to_tensorboard(self):
+        self.tensorboard_writer.add_scalar("Score", self.game_full_episode_scores[-1], self.episode_number + 1)
+        self.tensorboard_writer.add_scalar("MaxScoreSeen", self.max_episode_score_seen, self.episode_number + 1)
+        self.tensorboard_writer.add_scalar("RollingScore", self.rolling_results[-1], self.episode_number + 1)
+        self.tensorboard_writer.add_scalar("MaxRollingScoreSeen", self.max_rolling_score_seen, self.episode_number + 1)
 
     def show_whether_achieved_goal(self):
         """Prints out whether the agent achieved the environment target goal"""
