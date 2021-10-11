@@ -217,15 +217,11 @@ class Base_Agent(object):
             self.max_episode_score_seen = self.game_full_episode_scores[-1]
 
         if self.rolling_results[-1] > self.max_rolling_score_seen:
-            if len(self.rolling_results) > self.rolling_score_window:
-                self.max_rolling_score_seen = self.rolling_results[-1]
+            self.max_rolling_score_seen = self.rolling_results[-1]
 
     def print_rolling_result(self):
         """Prints out the latest episode results"""
-        text = """"\r Episode {0}, Score: {3: .2f}, Max score seen: {4: .2f}, Rolling score: {1: .2f}, Max rolling score seen: {2: .2f}"""
-        sys.stdout.write(text.format(len(self.game_full_episode_scores), self.rolling_results[-1], self.max_rolling_score_seen,
-                                     self.game_full_episode_scores[-1], self.max_episode_score_seen))
-        sys.stdout.flush()
+        print(f"\r Episode {len(self.game_full_episode_scores)}, Score: {self.game_full_episode_scores[-1]: .2f}, Max score seen: {self.max_episode_score_seen: .2f}, Rolling score: {self.rolling_results[-1]: .2f}, Max rolling score seen: {self.max_rolling_score_seen: .2f}")
 
     def show_whether_achieved_goal(self):
         """Prints out whether the agent achieved the environment target goal"""

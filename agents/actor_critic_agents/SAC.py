@@ -59,15 +59,9 @@ class SAC(Base_Agent):
     def save_result(self):
         """Saves the result of an episode of the game. Overriding the method in Base Agent that does this because we only
         want to keep track of the results during the evaluation episodes"""
-        if self.episode_number == 1 or not self.do_evaluation_iterations:
-            self.game_full_episode_scores.extend([self.total_episode_score_so_far])
-            self.rolling_results.append(np.mean(self.game_full_episode_scores[-1 * self.rolling_score_window:]))
-            self.save_max_result_seen()
-
-        elif (self.episode_number - 1) % TRAINING_EPISODES_PER_EVAL_EPISODE == 0:
-            self.game_full_episode_scores.extend([self.total_episode_score_so_far for _ in range(TRAINING_EPISODES_PER_EVAL_EPISODE)])
-            self.rolling_results.extend([np.mean(self.game_full_episode_scores[-1 * self.rolling_score_window:]) for _ in range(TRAINING_EPISODES_PER_EVAL_EPISODE)])
-            self.save_max_result_seen()
+        self.game_full_episode_scores.extend([self.total_episode_score_so_far])
+        self.rolling_results.append(np.mean(self.game_full_episode_scores[-1 * self.rolling_score_window:]))
+        self.save_max_result_seen()
 
     def reset_game(self):
         """Resets the game information so we are ready to play a new episode"""
@@ -89,8 +83,8 @@ class SAC(Base_Agent):
             if not eval_ep: self.save_experience(experience=(self.state, self.action, self.reward, self.next_state, mask))
             self.state = self.next_state
             self.global_step_number += 1
-        print(self.total_episode_score_so_far)
-        if eval_ep: self.print_summary_of_latest_evaluation_episode()
+        if eval_ep: 
+            self.print_summary_of_latest_evaluation_episode()
         self.episode_number += 1
 
     def pick_action(self, eval_ep, state=None):
@@ -207,5 +201,5 @@ class SAC(Base_Agent):
         """Prints a summary of the latest episode"""
         print(" ")
         print("----------------------------")
-        print("Episode score {} ".format(self.total_episode_score_so_far))
+        print(f"Episode evaluation score {self.total_episode_score_so_far}")
         print("----------------------------")
