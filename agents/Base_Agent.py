@@ -31,8 +31,12 @@ class Base_Agent(object):
         self.state_size =  int(self.get_state_size())
         self.hyperparameters = config.hyperparameters
         self.average_score_required_to_win = self.get_score_required_to_win()
-        self.rolling_score_window = self.get_trials()
-        # self.max_steps_per_episode = self.environment.spec.max_episode_steps
+        if self.environment_title == "PredatorPrey":
+            self.rolling_score_window = 100
+            self.max_steps_per_episode = self.environment._max_episode_steps
+        else:
+            self.rolling_score_window = self.get_trials()
+            self.max_steps_per_episode = self.environment.spec._max_episode_steps
         self.total_episode_score_so_far = 0
         self.game_full_episode_scores = []
         self.rolling_results = []
@@ -80,7 +84,8 @@ class Base_Agent(object):
         """Gets the action_size for the gym env into the correct shape for a neural network"""
         if "overwrite_action_size" in self.config.__dict__: return self.config.overwrite_action_size
         if "action_size" in self.environment.__dict__: return self.environment.action_size
-        if self.action_types == "DISCRETE": return self.environment.action_space.n
+        if self.environment_title == "PredatorPrey": return self.environment.action_space.nvec.item()
+        elif self.action_types == "DISCRETE": return self.environment.action_space.n
         else: return self.environment.action_space.shape[0]
 
     def get_state_size(self):
@@ -98,6 +103,8 @@ class Base_Agent(object):
         if self.environment_title == "FetchReach": return -5
         if self.environment_title in ["AntMaze", "Hopper", "Walker2d"]:
             print("Score required to win set to infinity therefore no learning rate annealing will happen")
+            return float("inf")
+        if self.environment_title == "PredatorPrey":
             return float("inf")
         try: return self.environment.unwrapped.reward_threshold
         except AttributeError:
@@ -156,7 +163,6 @@ class Base_Agent(object):
 
     def reset_game(self):
         """Resets the game information so we are ready to play a new episode"""
-        self.environment.seed(self.config.seed)
         self.state = self.environment.reset()
         self.next_state = None
         self.action = None
@@ -199,6 +205,11 @@ class Base_Agent(object):
         """Conducts an action in the environment"""
         self.next_state, self.reward, self.done, _ = self.environment.step(action)
         self.total_episode_score_so_far += self.reward
+        # time.sleep(0.05)
+        # self.environment.render()
+        # print(f"Episode {self.episode_number}")
+        # print(f"Action {self.action}")
+        # print(f"Score {round(self.total_episode_score_so_far[0], 1)}")
         if self.hyperparameters["clip_rewards"]: self.reward =  max(min(self.reward, 1.0), -1.0)
 
 
@@ -224,7 +235,7 @@ class Base_Agent(object):
 
     def print_rolling_result(self):
         """Prints out the latest episode results"""
-        print(f"\r Episode {len(self.game_full_episode_scores)}, Score: {self.game_full_episode_scores[-1]: .2f}, Max score seen: {self.max_episode_score_seen: .2f}, Rolling score: {self.rolling_results[-1]: .2f}, Max rolling score seen: {self.max_rolling_score_seen: .2f}")
+        print(f"\r Episode {len(self.game_full_episode_scores)}, Score: {self.game_full_episode_scores[-1].item(): .2f}, Max score seen: {self.max_episode_score_seen.item(): .2f}, Rolling score: {self.rolling_results[-1]: .2f}, Max rolling score seen: {self.max_rolling_score_seen: .2f}")
 
     def log_to_tensorboard(self):
         self.tensorboard_writer.add_scalar("Score", self.game_full_episode_scores[-1], self.episode_number + 1)
@@ -277,7 +288,7 @@ class Base_Agent(object):
     def save_experience(self, memory=None, experience=None):
         """Saves the recent experience to the memory buffer"""
         if memory is None: memory = self.memory
-        if experience is None: experience = self.state, self.action, self.reward, self.next_state, self.done
+        if experience is None: experience = self.state, self.action.item(), self.reward.item(), self.next_state, self.done
         memory.add_experience(*experience)
 
     def take_optimisation_step(self, optimizer, network, loss, clipping_norm=None, retain_graph=False):
