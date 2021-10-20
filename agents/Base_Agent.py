@@ -204,6 +204,8 @@ class Base_Agent(object):
     def conduct_action(self, action):
         """Conducts an action in the environment"""
         self.next_state, self.reward, self.done, _ = self.environment.step(action)
+        if self.episode_step_number_val >= self.environment._max_episode_steps:
+            self.done = True
         self.total_episode_score_so_far += self.reward
         # time.sleep(0.05)
         # self.environment.render()
