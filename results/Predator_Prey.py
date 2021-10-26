@@ -48,7 +48,6 @@ if __name__ == '__main__':
     config.hyperparameters = {
         "Actor_Critic_Agents":  {
 
-            "learning_rate": 0.005,
             "linear_hidden_units": [20, 10],
             "final_layer_activation": ["SOFTMAX", None],
             "gradient_clipping_norm": 5.0,
@@ -59,7 +58,7 @@ if __name__ == '__main__':
             "clip_rewards": False,
 
             "Actor": {
-                "learning_rate": 0.0003,
+                "learning_rate": 0.00003,  # KU: lowered LR by an order of 10
                 "linear_hidden_units": [64, 64],
                 "final_layer_activation": "Softmax",
                 "batch_norm": False,
@@ -69,7 +68,7 @@ if __name__ == '__main__':
             },
 
             "Critic": {
-                "learning_rate": 0.0003,
+                "learning_rate": 0.00003,  # KU: lowered LR by an order of 10
                 "linear_hidden_units": [64, 64],
                 "final_layer_activation": None,
                 "batch_norm": False,

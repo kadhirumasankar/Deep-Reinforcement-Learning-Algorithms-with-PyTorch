@@ -10,7 +10,7 @@ from pathlib import Path
 
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
-TRAINING_EPISODES_PER_EVAL_EPISODE = 10
+TRAINING_EPISODES_PER_EVAL_EPISODE = 1000
 EPSILON = 1e-6
 
 class SAC(Base_Agent):
@@ -144,6 +144,12 @@ class SAC(Base_Agent):
         policy_loss, log_pi = self.calculate_actor_loss(state_batch)
         if self.automatic_entropy_tuning: alpha_loss = self.calculate_entropy_tuning_loss(log_pi)
         else: alpha_loss = None
+
+        self.tensorboard_writer.add_scalar("qf1_loss", qf1_loss.item(), self.episode_number + 1)
+        self.tensorboard_writer.add_scalar("qf2_loss", qf2_loss.item(), self.episode_number + 1)
+        self.tensorboard_writer.add_scalar("policy_loss", policy_loss.item(), self.episode_number + 1)
+        self.tensorboard_writer.add_scalar("alpha_loss", alpha_loss.item(), self.episode_number + 1)
+
         self.update_actor_parameters(policy_loss, alpha_loss)
 
     def sample_experiences(self):
@@ -204,7 +210,7 @@ class SAC(Base_Agent):
         print("----------------------------")
         print(f"Episode {self.episode_number + 1} evaluation score {self.total_episode_score_so_far.item()}")
         print("----------------------------")
-        if self.episode_number % 50 == 0:
+        if self.episode_number % TRAINING_EPISODES_PER_EVAL_EPISODE == 0:
             print("SAVED")
             torch.save(self.critic_local.state_dict(), Path(f'/home/kadhir/research/Deep-Reinforcement-Learning-Algorithms-with-PyTorch/results/PredatorPrey/critic_local_{len(self.game_full_episode_scores)}.pt'))
             torch.save(self.critic_local_2.state_dict(), Path(f'/home/kadhir/research/Deep-Reinforcement-Learning-Algorithms-with-PyTorch/results/PredatorPrey/critic_local_2_{len(self.game_full_episode_scores)}.pt'))
