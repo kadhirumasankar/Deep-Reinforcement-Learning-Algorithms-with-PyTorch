@@ -3,6 +3,7 @@ import argparse
 import sys
 from os.path import dirname, abspath
 sys.path.append(dirname(dirname(abspath(__file__))))
+import pathlib
 
 from agents.actor_critic_agents.SAC_Discrete import SAC_Discrete
 from agents.Trainer import Trainer
@@ -42,7 +43,12 @@ if __name__ == '__main__':
     config.use_GPU = False
     config.overwrite_existing_results_file = False
     config.randomise_random_seed = True
-    config.save_model = False
+    config.save_model = True
+    config.output_dir = pathlib.Path("results/PredatorPreyModels/")
+    if config.save_model and config.output_dir == None:
+        raise Exception("config.save_model is set to True but no output_dir provided")
+    elif not config.save_model and not config.output_dir == None:
+        raise Exception("config.save_model is set to False but an output_dir was provided")
 
 
     config.hyperparameters = {

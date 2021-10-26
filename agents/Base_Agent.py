@@ -48,6 +48,8 @@ class Base_Agent(object):
         self.global_step_number = 0
         self.turn_off_exploration = False
         self.tensorboard_writer = SummaryWriter()
+        self.output_dir = config.output_dir
+        self.output_dir.mkdir(parents=True, exist_ok=True)
         gym.logger.set_level(40)  # stops it from printing an unnecessary warning
         self.log_game_info()
 
@@ -198,7 +200,6 @@ class Base_Agent(object):
             if save_and_print_results: self.save_and_print_result()
         time_taken = time.time() - start
         if show_whether_achieved_goal: self.show_whether_achieved_goal()
-        if self.config.save_model: self.locally_save_policy()
         return self.game_full_episode_scores, self.rolling_results, time_taken
 
     def conduct_action(self, action):
