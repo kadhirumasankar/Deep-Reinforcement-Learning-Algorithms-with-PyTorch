@@ -1,4 +1,5 @@
 from collections import namedtuple, deque
+import dill
 import random
 import torch
 import numpy as np
@@ -6,9 +7,16 @@ import numpy as np
 class Replay_Buffer(object):
     """Replay buffer to store past experiences that the agent can then use for training data"""
     
-    def __init__(self, buffer_size, batch_size, seed, device=None):
-
-        self.memory = deque(maxlen=buffer_size)
+    def __init__(self, buffer_size, batch_size, seed, load_memory_path=None, device=None):
+        if load_memory_path is None:
+            self.memory = deque(maxlen=buffer_size)
+        else:
+            try:
+                with open(load_memory_path, 'rb') as f:
+                    self.memory = dill.load(f)
+            except FileNotFoundError:
+                print(f"Provided memory file path {load_memory_path} was not found. The agent will start with fresh memory")
+                self.memory = deque(maxlen=buffer_size)
         self.batch_size = batch_size
         self.experience = namedtuple("Experience", field_names=["state", "action", "reward", "next_state", "done"])
         self.seed = random.seed(seed)
