@@ -6,6 +6,7 @@ sys.path.append(dirname(dirname(abspath(__file__))))
 import pathlib
 
 from agents.actor_critic_agents.SAC_Discrete import SAC_Discrete
+from agents.DQN_agents.DQN import DQN
 from agents.Trainer import Trainer
 from utilities.data_structures.Config import Config
 
@@ -44,12 +45,23 @@ if __name__ == '__main__':
     config.overwrite_existing_results_file = False
     config.randomise_random_seed = True
     config.save_model = True
-    config.output_dir = pathlib.Path("results/PredatorPreyModels/")
-    if config.save_model and config.output_dir == None:
-        raise Exception("config.save_model is set to True but no output_dir provided")
-    elif not config.save_model and not config.output_dir == None:
-        raise Exception("config.save_model is set to False but an output_dir was provided")
+    # config.model_dir = None
+    config.model_dir = pathlib.Path("results/PredatorPreyModels/")
+    # config.load_model = True
+    config.load_model = False
+    # config.load_model_episode = 26000
+    config.load_model_episode = 0
+    config.render_env = False
 
+    if config.save_model and config.model_dir == None:
+        raise Exception("config.save_model is set to True but no model_dir provided")
+    # elif not config.save_model and not config.model_dir == None:
+        # raise Exception("config.save_model is set to False but a model_dir was provided")
+    
+    if config.load_model and config.load_model_episode == 0:
+        raise Exception("config.load_model is set to True but no episode number provided")
+    elif not config.load_model and config.load_model_episode != 0:
+        raise Exception("config.load_model is set to False but load_model_episode is not set to 0")
 
     config.hyperparameters = {
         "Actor_Critic_Agents":  {
@@ -98,9 +110,30 @@ if __name__ == '__main__':
             "entropy_term_weight": None,
             "add_extra_noise": False,
             "do_evaluation_iterations": True
+        },
+        "DQN_Agents": {
+            "learning_rate": 0.005,
+            "batch_size": 64,
+            "buffer_size": 40000,
+            "epsilon": 0.1,
+            "epsilon_decay_rate_denominator": 200,
+            "discount_rate": 0.99,
+            "tau": 0.1,
+            "alpha_prioritised_replay": 0.6,
+            "beta_prioritised_replay": 0.4,
+            "incremental_td_error": 1e-8,
+            "update_every_n_steps": 3,
+            "linear_hidden_units": [20, 20, 20],
+            "final_layer_activation": "None",
+            "batch_norm": False,
+            "gradient_clipping_norm": 5,
+            "HER_sample_proportion": 0.8,
+            "clip_rewards": False,
+            "learning_iterations": 1
         }
     }
 
     AGENTS = [SAC_Discrete]
+    # AGENTS = [DQN]
     trainer = Trainer(config, AGENTS)
     trainer.run_games_for_agents()

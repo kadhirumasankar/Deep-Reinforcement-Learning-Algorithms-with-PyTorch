@@ -48,8 +48,8 @@ class Base_Agent(object):
         self.global_step_number = 0
         self.turn_off_exploration = False
         self.tensorboard_writer = SummaryWriter()
-        self.output_dir = config.output_dir
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.model_dir = config.model_dir
+        self.model_dir.mkdir(parents=True, exist_ok=True)
         gym.logger.set_level(40)  # stops it from printing an unnecessary warning
         self.log_game_info()
 
@@ -171,6 +171,7 @@ class Base_Agent(object):
         self.reward = None
         self.done = False
         self.total_episode_score_so_far = 0
+        self.actions_chosen = np.array([0, 0, 0, 0, 0])
         self.episode_states = []
         self.episode_rewards = []
         self.episode_actions = []
@@ -208,11 +209,13 @@ class Base_Agent(object):
         if self.episode_step_number_val >= self.environment._max_episode_steps:
             self.done = True
         self.total_episode_score_so_far += self.reward
-        # time.sleep(0.05)
-        # self.environment.render()
-        # print(f"Episode {self.episode_number}")
-        # print(f"Action {self.action}")
-        # print(f"Score {round(self.total_episode_score_so_far[0], 1)}")
+        self.actions_chosen[self.action] += 1
+        if self.config.render_env:
+            time.sleep(0.01)
+            self.environment.render()
+            print(f"Episode {self.episode_number}")
+            print(f"Action {self.action}")
+            print(f"Score {round(self.total_episode_score_so_far[0], 1)}")
         if self.hyperparameters["clip_rewards"]: self.reward =  max(min(self.reward, 1.0), -1.0)
 
 
@@ -245,6 +248,13 @@ class Base_Agent(object):
         self.tensorboard_writer.add_scalar("MaxScoreSeen", self.max_episode_score_seen, self.episode_number + 1)
         self.tensorboard_writer.add_scalar("RollingScore", self.rolling_results[-1], self.episode_number + 1)
         self.tensorboard_writer.add_scalar("MaxRollingScoreSeen", self.max_rolling_score_seen, self.episode_number + 1)
+        self.tensorboard_writer.add_scalar("Steps", self.game_full_episode_scores[-1]/-0.05, self.episode_number + 1)
+        self.tensorboard_writer.add_scalar("RollingSteps", self.rolling_results[-1]/-0.05, self.episode_number + 1)
+        self.tensorboard_writer.add_scalar("Action0", self.actions_chosen[0], self.episode_number + 1)
+        self.tensorboard_writer.add_scalar("Action1", self.actions_chosen[1], self.episode_number + 1)
+        self.tensorboard_writer.add_scalar("Action2", self.actions_chosen[2], self.episode_number + 1)
+        self.tensorboard_writer.add_scalar("Action3", self.actions_chosen[3], self.episode_number + 1)
+        self.tensorboard_writer.add_scalar("Action4", self.actions_chosen[4], self.episode_number + 1)
 
     def show_whether_achieved_goal(self):
         """Prints out whether the agent achieved the environment target goal"""
