@@ -55,7 +55,7 @@ if __name__ == "__main__":
     config.visualise_overall_agent_results = True
     config.standard_deviation_results = 1.0
     config.runs_per_agent = 1
-    config.use_GPU = False
+    config.use_GPU = True
     config.overwrite_existing_results_file = False
     config.randomise_random_seed = True
     config.save_model = True
