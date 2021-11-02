@@ -35,6 +35,8 @@ class DDPG(Base_Agent):
             self.actor_target = self.create_NN(input_dim=self.state_size, output_dim=self.action_size, key_to_use="Actor")
             Base_Agent.copy_model_over(self.actor_local, self.actor_target)
 
+        self.critic_optimizer = optim.Adam(self.critic_local.parameters(),
+                                           lr=self.hyperparameters["Critic"]["learning_rate"], eps=1e-4)
         self.actor_optimizer = optim.Adam(self.actor_local.parameters(),
                                           lr=self.hyperparameters["Actor"]["learning_rate"], eps=1e-4)
         self.exploration_strategy = OU_Noise_Exploration(self.config)
