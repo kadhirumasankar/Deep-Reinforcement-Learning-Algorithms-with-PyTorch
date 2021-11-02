@@ -56,6 +56,7 @@ if __name__ == "__main__":
     config.standard_deviation_results = 1.0
     config.runs_per_agent = 1
     config.use_GPU = True
+    config.device = "cuda:0" if config.use_GPU else "cpu"
     config.overwrite_existing_results_file = False
     config.randomise_random_seed = True
     config.save_model = True

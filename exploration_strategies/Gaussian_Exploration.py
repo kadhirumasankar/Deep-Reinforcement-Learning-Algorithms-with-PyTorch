@@ -18,7 +18,7 @@ class Gaussian_Exploration(Base_Exploration_Strategy):
         action_noise = self.action_noise_distribution.sample(sample_shape=action.shape)
         action_noise = action_noise.squeeze(-1)
         clipped_action_noise = torch.clamp(action_noise, min=-self.action_noise_clipping_range,
-                                           max=self.action_noise_clipping_range)
+                                           max=self.action_noise_clipping_range).to(device=self.config.device)
         action += clipped_action_noise
         return action
 
