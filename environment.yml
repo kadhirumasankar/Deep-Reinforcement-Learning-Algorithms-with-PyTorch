@@ -28,6 +28,7 @@ dependencies:
   - cycler=0.10.0
   - dataclasses=0.8
   - dbus=1.13.6
+  - dill=0.3.4
   - expat=2.4.1
   - ffmpeg=4.3.2
   - fontconfig=2.13.1
