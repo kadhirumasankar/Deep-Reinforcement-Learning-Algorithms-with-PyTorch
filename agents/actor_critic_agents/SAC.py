@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from torch.distributions import Normal
 import numpy as np
 from pathlib import Path
+import dill
 
 LOG_SIG_MAX = 2
 LOG_SIG_MIN = -20
@@ -210,10 +211,12 @@ class SAC(Base_Agent):
         print("----------------------------")
         print(f"Episode {self.episode_number + 1} evaluation score {self.total_episode_score_so_far.item()}")
         print("----------------------------")
-        if self.episode_number % TRAINING_EPISODES_PER_EVAL_EPISODE == 0:
-            print("SAVED")
-            torch.save(self.critic_local.state_dict(), Path(f'/home/kadhir/research/Deep-Reinforcement-Learning-Algorithms-with-PyTorch/results/PredatorPrey/critic_local_{len(self.game_full_episode_scores)}.pt'))
-            torch.save(self.critic_local_2.state_dict(), Path(f'/home/kadhir/research/Deep-Reinforcement-Learning-Algorithms-with-PyTorch/results/PredatorPrey/critic_local_2_{len(self.game_full_episode_scores)}.pt'))
-            torch.save(self.critic_target.state_dict(), Path(f'/home/kadhir/research/Deep-Reinforcement-Learning-Algorithms-with-PyTorch/results/PredatorPrey/critic_target_{len(self.game_full_episode_scores)}.pt'))
-            torch.save(self.critic_target_2.state_dict(), Path(f'/home/kadhir/research/Deep-Reinforcement-Learning-Algorithms-with-PyTorch/results/PredatorPrey/critic_target_2_{len(self.game_full_episode_scores)}.pt'))
-            torch.save(self.actor_local.state_dict(), Path(f'/home/kadhir/research/Deep-Reinforcement-Learning-Algorithms-with-PyTorch/results/PredatorPrey/actor_local_{len(self.game_full_episode_scores)}.pt'))
+        if self.episode_number % TRAINING_EPISODES_PER_EVAL_EPISODE == 0 and self.config.save_model:
+            torch.save(self.critic_local, f'{self.model_dir}/critic_local_{len(self.game_full_episode_scores)}.pt')
+            torch.save(self.critic_local_2, f'{self.model_dir}/critic_local_2_{len(self.game_full_episode_scores)}.pt')
+            torch.save(self.critic_target, f'{self.model_dir}/critic_target_{len(self.game_full_episode_scores)}.pt')
+            torch.save(self.critic_target_2, f'{self.model_dir}/critic_target_2_{len(self.game_full_episode_scores)}.pt')
+            torch.save(self.actor_local, f'{self.model_dir}/actor_local_{len(self.game_full_episode_scores)}.pt')
+            with open(f'{self.model_dir}/memory_{len(self.game_full_episode_scores)}.pkl', 'wb') as f:
+                dill.dump(self.memory, f)
+            print(f"SAVED {self.episode_number} models to {self.model_dir}")

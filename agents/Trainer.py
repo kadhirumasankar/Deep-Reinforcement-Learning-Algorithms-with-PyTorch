@@ -22,6 +22,7 @@ class Trainer(object):
         """Creates a dictionary that maps an agent to their wider agent group"""
         agent_to_agent_group_dictionary = {
             "SAC": "Actor_Critic_Agents",
+            "DQN": "DQN_Agents",
         }
         return agent_to_agent_group_dictionary
 
@@ -76,6 +77,7 @@ class Trainer(object):
             self.environment_name = agent.environment_title
             print(agent.hyperparameters)
             print("RANDOM SEED " , agent_config.seed)
+            input("Make sure everything looks correct. Press Enter to continue...")
             game_scores, rolling_scores, time_taken = agent.run_n_episodes()
             print("Time taken: {}".format(time_taken), flush=True)
             self.print_two_empty_lines()
