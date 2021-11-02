@@ -5,6 +5,9 @@ from agents.Base_Agent import Base_Agent
 from utilities.data_structures.Replay_Buffer import Replay_Buffer
 from exploration_strategies.OU_Noise_Exploration import OU_Noise_Exploration
 import numpy as np
+import dill
+
+TRAINING_EPISODES_PER_MODEL_SAVE = 5000
 
 class DDPG(Base_Agent):
     """A DDPG Agent"""
@@ -13,21 +16,35 @@ class DDPG(Base_Agent):
     def __init__(self, config):
         Base_Agent.__init__(self, config)
         self.hyperparameters = config.hyperparameters
-        self.critic_local = self.create_NN(input_dim=self.state_size + self.action_size, output_dim=1, key_to_use="Critic")
-        self.critic_target = self.create_NN(input_dim=self.state_size + self.action_size, output_dim=1, key_to_use="Critic")
-        Base_Agent.copy_model_over(self.critic_local, self.critic_target)
+        if self.config.load_model:
+            self.critic_local = torch.load(f'{self.config.model_dir}/critic_local_{self.config.load_model_episode}.pt')
+            self.critic_target = torch.load(f'{self.config.model_dir}/critic_target_{self.config.load_model_episode}.pt')
+            Base_Agent.copy_model_over(self.critic_local, self.critic_target)
+            self.memory = Replay_Buffer(self.hyperparameters["Critic"]["buffer_size"], self.hyperparameters["batch_size"],
+                                        self.config.seed, device=self.device, load_memory_path=f"{self.config.model_dir}/memory_{self.config.load_model_episode}.pkl")
+            self.actor_local = torch.load(f'{self.config.model_dir}/actor_local_{self.config.load_model_episode}.pt')
+            self.actor_target = torch.load(f'{self.config.model_dir}/actor_target_{self.config.load_model_episode}.pt')
+            Base_Agent.copy_model_over(self.actor_local, self.actor_target)
+        else:
+            self.critic_local = self.create_NN(input_dim=self.state_size + self.action_size, output_dim=1, key_to_use="Critic")
+            self.critic_target = self.create_NN(input_dim=self.state_size + self.action_size, output_dim=1, key_to_use="Critic")
+            Base_Agent.copy_model_over(self.critic_local, self.critic_target)
+            self.memory = Replay_Buffer(self.hyperparameters["Critic"]["buffer_size"], self.hyperparameters["batch_size"],
+                                        self.config.seed)
+            self.actor_local = self.create_NN(input_dim=self.state_size, output_dim=self.action_size, key_to_use="Actor")
+            self.actor_target = self.create_NN(input_dim=self.state_size, output_dim=self.action_size, key_to_use="Actor")
+            Base_Agent.copy_model_over(self.actor_local, self.actor_target)
 
         self.critic_optimizer = optim.Adam(self.critic_local.parameters(),
                                            lr=self.hyperparameters["Critic"]["learning_rate"], eps=1e-4)
-        self.memory = Replay_Buffer(self.hyperparameters["Critic"]["buffer_size"], self.hyperparameters["batch_size"],
-                                    self.config.seed)
-        self.actor_local = self.create_NN(input_dim=self.state_size, output_dim=self.action_size, key_to_use="Actor")
-        self.actor_target = self.create_NN(input_dim=self.state_size, output_dim=self.action_size, key_to_use="Actor")
-        Base_Agent.copy_model_over(self.actor_local, self.actor_target)
-
         self.actor_optimizer = optim.Adam(self.actor_local.parameters(),
                                           lr=self.hyperparameters["Actor"]["learning_rate"], eps=1e-4)
         self.exploration_strategy = OU_Noise_Exploration(self.config)
+
+        if self.config.load_model:
+            print(f"Episode {self.config.load_model_episode} models will be loaded from {self.model_dir}")
+        if self.config.save_model:
+            print(f"Models will be saved to {self.model_dir}")
 
     def step(self):
         """Runs a step in the game"""
@@ -38,14 +55,17 @@ class DDPG(Base_Agent):
             self.action = self.pick_action()
             # np.argmax returns the index of the action with the highest score
             self.conduct_action(np.argmax(self.action))
-            if self.time_for_critic_and_actor_to_learn():
-                for _ in range(self.hyperparameters["learning_updates_per_learning_session"]):
-                    states, actions, rewards, next_states, dones = self.sample_experiences()
-                    self.critic_learn(states, actions, rewards, next_states, dones)
-                    self.actor_learn(states)
-            self.save_experience()
+            if not self.config.evaluate_policy:
+                if self.time_for_critic_and_actor_to_learn():
+                    for _ in range(self.hyperparameters["learning_updates_per_learning_session"]):
+                        states, actions, rewards, next_states, dones = self.sample_experiences()
+                        self.critic_learn(states, actions, rewards, next_states, dones)
+                        self.actor_learn(states)
+                self.save_experience()
             self.state = self.next_state #this is to set the state for the next iteration
             self.global_step_number += 1
+        if self.episode_number % TRAINING_EPISODES_PER_MODEL_SAVE == 0 and self.config.save_model:
+            self.save_models()
         self.episode_number += 1
 
     def sample_experiences(self):
@@ -117,3 +137,14 @@ class DDPG(Base_Agent):
         actions_pred = self.actor_local(torch.reshape(states, [-1, self.state_size]))
         actor_loss = -self.critic_local(torch.cat((torch.reshape(states, [-1, self.state_size]), actions_pred), 1)).mean()
         return actor_loss
+
+    def save_models(self):
+        torch.save(self.critic_local, f'{self.model_dir}/critic_local_{len(self.game_full_episode_scores)}.pt')
+        torch.save(self.critic_target, f'{self.model_dir}/critic_target_{len(self.game_full_episode_scores)}.pt')
+        torch.save(self.actor_local, f'{self.model_dir}/actor_local_{len(self.game_full_episode_scores)}.pt')
+        torch.save(self.actor_target, f'{self.model_dir}/actor_target_{len(self.game_full_episode_scores)}.pt')
+        torch.save(self.critic_local_2, f'{self.model_dir}/critic_local_2_{len(self.game_full_episode_scores)}.pt')
+        torch.save(self.critic_target_2, f'{self.model_dir}/critic_target_2_{len(self.game_full_episode_scores)}.pt')
+        with open(f'{self.model_dir}/memory_{len(self.game_full_episode_scores)}.pkl', 'wb') as f:
+            dill.dump(self.memory, f)
+        print(f"SAVED {self.episode_number} models to {self.model_dir}")

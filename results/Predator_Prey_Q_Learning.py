@@ -56,9 +56,6 @@ rolling_scores = np.array([])
 
 for i in range(1, 100001):
     state = env.reset()
-    import pdb
-
-    pdb.set_trace()
     q_state = encode(env.predator_loc[0], env.prey_loc[0])
 
     epochs, penalties, reward, = 0, 0, 0

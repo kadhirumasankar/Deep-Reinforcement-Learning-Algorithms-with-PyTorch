@@ -211,7 +211,7 @@ class Base_Agent(object):
         self.total_episode_score_so_far += self.reward
         self.actions_chosen[np.argmax(self.action)] += 1
         if self.config.render_env:
-            time.sleep(0.01)
+            time.sleep(0.05)
             self.environment.render()
             print(f"Episode {self.episode_number}")
             print(f"Action {self.action}")
