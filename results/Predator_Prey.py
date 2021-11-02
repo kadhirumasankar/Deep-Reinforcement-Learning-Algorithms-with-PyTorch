@@ -46,14 +46,13 @@ if __name__ == '__main__':
     config.use_GPU = False
     config.overwrite_existing_results_file = False
     config.randomise_random_seed = True
-    config.save_model = True
-    # config.model_dir = None
+    config.save_model = False
     config.model_dir = pathlib.Path("results/PredatorPreyModels/")
-    # config.load_model = True
-    config.load_model = False
-    # config.load_model_episode = 26000
-    config.load_model_episode = 0
-    config.render_env = False
+    config.load_model = True
+    config.load_model_episode = 15000
+    config.render_env = True
+    config.evaluate_policy = True
+    
 
     if config.save_model and config.model_dir == None:
         raise Exception("config.save_model is set to True but no model_dir provided")

@@ -12,13 +12,18 @@ class TD3(DDPG):
 
     def __init__(self, config):
         DDPG.__init__(self, config)
-        self.critic_local_2 = self.create_NN(input_dim=self.state_size + self.action_size, output_dim=1,
-                                           key_to_use="Critic", override_seed=self.config.seed + 1)
-        self.critic_target_2 = self.create_NN(input_dim=self.state_size + self.action_size, output_dim=1,
-                                            key_to_use="Critic")
-        Base_Agent.copy_model_over(self.critic_local_2, self.critic_target_2)
+        if self.config.load_model:
+            self.critic_local_2 = torch.load(f'{self.config.model_dir}/critic_local_2_{self.config.load_model_episode}.pt')
+            self.critic_target_2 = torch.load(f'{self.config.model_dir}/critic_target_2_{self.config.load_model_episode}.pt')
+            Base_Agent.copy_model_over(self.critic_local_2, self.critic_target_2)
+        else:
+            self.critic_local_2 = self.create_NN(input_dim=self.state_size + self.action_size, output_dim=1,
+                                                 key_to_use="Critic", override_seed=self.config.seed + 1)
+            self.critic_target_2 = self.create_NN(input_dim=self.state_size + self.action_size, output_dim=1,
+                                                  key_to_use="Critic")
+            Base_Agent.copy_model_over(self.critic_local_2, self.critic_target_2)
         self.critic_optimizer_2 = optim.Adam(self.critic_local_2.parameters(),
-                                           lr=self.hyperparameters["Critic"]["learning_rate"], eps=1e-4)
+                                             lr=self.hyperparameters["Critic"]["learning_rate"], eps=1e-4)
         self.exploration_strategy_critic = Gaussian_Exploration(self.config)
 
     def compute_critic_values_for_next_states(self, next_states):
