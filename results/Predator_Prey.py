@@ -133,7 +133,7 @@ if __name__ == '__main__':
         }
     }
 
-    # AGENTS = [SAC_Discrete]
-    AGENTS = [DQN]
+    AGENTS = [SAC_Discrete]
+    # AGENTS = [DQN]
     trainer = Trainer(config, AGENTS)
     trainer.run_games_for_agents()
