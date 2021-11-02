@@ -209,7 +209,7 @@ class Base_Agent(object):
         if self.episode_step_number_val >= self.environment._max_episode_steps:
             self.done = True
         self.total_episode_score_so_far += self.reward
-        self.actions_chosen[self.action] += 1
+        self.actions_chosen[np.argmax(self.action)] += 1
         if self.config.render_env:
             time.sleep(0.01)
             self.environment.render()
@@ -301,7 +301,7 @@ class Base_Agent(object):
     def save_experience(self, memory=None, experience=None):
         """Saves the recent experience to the memory buffer"""
         if memory is None: memory = self.memory
-        if experience is None: experience = self.state, self.action.item(), self.reward.item(), self.next_state, self.done
+        if experience is None: experience = self.state, self.action, self.reward.item(), self.next_state, self.done
         memory.add_experience(*experience)
 
     def take_optimisation_step(self, optimizer, network, loss, clipping_norm=None, retain_graph=False):

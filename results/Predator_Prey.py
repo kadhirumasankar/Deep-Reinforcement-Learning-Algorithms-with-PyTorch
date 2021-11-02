@@ -7,8 +7,10 @@ import pathlib
 
 from agents.actor_critic_agents.SAC_Discrete import SAC_Discrete
 from agents.DQN_agents.DQN import DQN
+from agents.actor_critic_agents.TD3 import TD3
 from agents.Trainer import Trainer
 from utilities.data_structures.Config import Config
+
 
 class PredatorPreyAgent(object):
     def __init__(self, action_space):
@@ -133,7 +135,8 @@ if __name__ == '__main__':
         }
     }
 
-    AGENTS = [SAC_Discrete]
+    # AGENTS = [SAC_Discrete]
     # AGENTS = [DQN]
+    AGENTS = [TD3]
     trainer = Trainer(config, AGENTS)
     trainer.run_games_for_agents()
