@@ -4,6 +4,7 @@ import argparse
 import sys
 import signal
 
+
 class RandomAgent(object):
     def __init__(self, action_space):
         self.action_space = action_space
@@ -11,21 +12,26 @@ class RandomAgent(object):
     def act(self):
         return self.action_space.sample()
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser('Example GCCNet environment random agent')
-    parser.add_argument('--nagents', type=int, default=1, help="Number of agents")
-    parser.add_argument('--display', action="store_true", default=False,
-                        help="Use to display environment")
-    parser.add_argument('--nepisodes', type=int, default=50, help="Number of agents")
 
-        env = PredatorPreyEnv()
-        env.init_curses()
-        env.init_args(parser)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser("Example GCCNet environment random agent")
+    parser.add_argument("--nagents", type=int, default=1, help="Number of agents")
+    parser.add_argument(
+        "--display",
+        action="store_true",
+        default=False,
+        help="Use to display environment",
+    )
+    parser.add_argument("--nepisodes", type=int, default=50, help="Number of agents")
+
+    env = PredatorPreyEnv()
+    env.init_curses()
+    env.init_args(parser)
 
     args = parser.parse_args()
 
     def signal_handler(signal, frame):
-        print('You pressed Ctrl+C! Exiting gracefully.')
+        print("You pressed Ctrl+C! Exiting gracefully.")
         if args.display:
             env.exit_render()
         sys.exit(0)
