@@ -4,6 +4,7 @@ from torch import optim
 from agents.Base_Agent import Base_Agent
 from utilities.data_structures.Replay_Buffer import Replay_Buffer
 from exploration_strategies.OU_Noise_Exploration import OU_Noise_Exploration
+import numpy as np
 
 class DDPG(Base_Agent):
     """A DDPG Agent"""
@@ -30,10 +31,13 @@ class DDPG(Base_Agent):
 
     def step(self):
         """Runs a step in the game"""
+        self.episode_step_number_val = 0
         while not self.done:
+            self.episode_step_number_val += 1
             # print("State ", self.state.shape)
             self.action = self.pick_action()
-            self.conduct_action(self.action)
+            # np.argmax returns the index of the action with the highest score
+            self.conduct_action(np.argmax(self.action))
             if self.time_for_critic_and_actor_to_learn():
                 for _ in range(self.hyperparameters["learning_updates_per_learning_session"]):
                     states, actions, rewards, next_states, dones = self.sample_experiences()
@@ -52,7 +56,7 @@ class DDPG(Base_Agent):
         if state is None: state = torch.from_numpy(self.state).float().unsqueeze(0).to(self.device)
         self.actor_local.eval()
         with torch.no_grad():
-            action = self.actor_local(state).cpu().data.numpy()
+            action = self.actor_local(torch.reshape(state, [-1, self.state_size])).cpu().data.numpy()
         self.actor_local.train()
         action = self.exploration_strategy.perturb_action_for_exploration_purposes({"action": action})
         return action.squeeze(0)
@@ -110,6 +114,6 @@ class DDPG(Base_Agent):
 
     def calculate_actor_loss(self, states):
         """Calculates the loss for the actor"""
-        actions_pred = self.actor_local(states)
-        actor_loss = -self.critic_local(torch.cat((states, actions_pred), 1)).mean()
+        actions_pred = self.actor_local(torch.reshape(states, [-1, self.state_size]))
+        actor_loss = -self.critic_local(torch.cat((torch.reshape(states, [-1, self.state_size]), actions_pred), 1)).mean()
         return actor_loss

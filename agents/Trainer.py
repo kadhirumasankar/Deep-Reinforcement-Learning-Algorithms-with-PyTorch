@@ -23,6 +23,7 @@ class Trainer(object):
         agent_to_agent_group_dictionary = {
             "SAC": "Actor_Critic_Agents",
             "DQN": "DQN_Agents",
+            "TD3": "Actor_Critic_Agents",
         }
         return agent_to_agent_group_dictionary
 
@@ -31,6 +32,8 @@ class Trainer(object):
         See https://en.wikipedia.org/wiki/Web_colors and https://htmlcolorcodes.com/ for hex colors"""
         agent_to_color_dictionary = {
             "SAC": "#1C2833",
+            "DQN": "#0000FF",
+            "TD3": "#E74C3C",
         }
         return agent_to_color_dictionary
 

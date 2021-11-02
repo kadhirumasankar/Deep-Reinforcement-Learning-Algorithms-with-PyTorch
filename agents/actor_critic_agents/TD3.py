@@ -24,10 +24,10 @@ class TD3(DDPG):
     def compute_critic_values_for_next_states(self, next_states):
         """Computes the critic values for next states to be used in the loss for the critic"""
         with torch.no_grad():
-            actions_next = self.actor_target(next_states)
+            actions_next = self.actor_target(torch.reshape(next_states, [-1, self.state_size]))
             actions_next_with_noise =  self.exploration_strategy_critic.perturb_action_for_exploration_purposes({"action": actions_next})
-            critic_targets_next_1 = self.critic_target(torch.cat((next_states, actions_next_with_noise), 1))
-            critic_targets_next_2 = self.critic_target_2(torch.cat((next_states, actions_next_with_noise), 1))
+            critic_targets_next_1 = self.critic_target(torch.cat((torch.reshape(next_states, [-1, self.state_size]), actions_next_with_noise), 1))
+            critic_targets_next_2 = self.critic_target_2(torch.cat((torch.reshape(next_states, [-1, self.state_size]), actions_next_with_noise), 1))
             critic_targets_next = torch.min(torch.cat((critic_targets_next_1, critic_targets_next_2),1), dim=1)[0].unsqueeze(-1)
         return critic_targets_next
 
@@ -36,8 +36,8 @@ class TD3(DDPG):
         critic_targets_next =  self.compute_critic_values_for_next_states(next_states)
         critic_targets = self.compute_critic_values_for_current_states(rewards, critic_targets_next, dones)
 
-        critic_expected_1 = self.critic_local(torch.cat((states, actions), 1))
-        critic_expected_2 = self.critic_local_2(torch.cat((states, actions), 1))
+        critic_expected_1 = self.critic_local(torch.cat((torch.reshape(states, [-1, self.state_size]), actions), 1))
+        critic_expected_2 = self.critic_local_2(torch.cat((torch.reshape(states, [-1, self.state_size]), actions), 1))
 
         critic_loss_1 = functional.mse_loss(critic_expected_1, critic_targets)
         critic_loss_2 = functional.mse_loss(critic_expected_2, critic_targets)
