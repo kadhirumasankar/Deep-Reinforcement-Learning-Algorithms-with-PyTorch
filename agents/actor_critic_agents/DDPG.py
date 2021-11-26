@@ -42,13 +42,13 @@ class DDPG(Base_Agent):
             Base_Agent.copy_model_over(self.actor_local, self.actor_target)
         else:
             self.critic_local = self.create_NN(
-                input_dim=self.state_size + self.action_size,
-                output_dim=1,
+                input_dim=self.state_size + self.action_size * self.config.nagents,
+                output_dim=self.config.nagents,
                 key_to_use="Critic",
             )
             self.critic_target = self.create_NN(
-                input_dim=self.state_size + self.action_size,
-                output_dim=1,
+                input_dim=self.state_size + self.action_size * self.config.nagents,
+                output_dim=self.config.nagents,
                 key_to_use="Critic",
             )
             Base_Agent.copy_model_over(self.critic_local, self.critic_target)
@@ -59,12 +59,12 @@ class DDPG(Base_Agent):
             )
             self.actor_local = self.create_NN(
                 input_dim=self.state_size,
-                output_dim=self.action_size,
+                output_dim=self.action_size * self.config.nagents,
                 key_to_use="Actor",
             )
             self.actor_target = self.create_NN(
                 input_dim=self.state_size,
-                output_dim=self.action_size,
+                output_dim=self.action_size * self.config.nagents,
                 key_to_use="Actor",
             )
             Base_Agent.copy_model_over(self.actor_local, self.actor_target)
@@ -96,7 +96,7 @@ class DDPG(Base_Agent):
             # print("State ", self.state.shape)
             self.action = self.pick_action()
             # np.argmax returns the index of the action with the highest score
-            self.conduct_action(np.argmax(self.action))
+            self.conduct_action(self.action.argmax(axis=1))
             if not self.config.evaluate_policy:
                 if self.time_for_critic_and_actor_to_learn():
                     for _ in range(
@@ -137,7 +137,7 @@ class DDPG(Base_Agent):
         action = self.exploration_strategy.perturb_action_for_exploration_purposes(
             {"action": action}
         )
-        return action.squeeze(0)
+        return np.reshape(action.squeeze(0), (self.config.nagents, self.action_size))
 
     def critic_learn(self, states, actions, rewards, next_states, dones):
         """Runs a learning iteration for the critic"""

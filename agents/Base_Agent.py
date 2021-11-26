@@ -24,6 +24,7 @@ class Base_Agent(object):
         self.set_random_seeds(config.seed)
         self.environment = config.environment
         self.environment_title = self.get_environment_title()
+        self.config.nagents = self.environment.npredator
         self.action_types = (
             "DISCRETE"
             if self.environment.action_space.dtype == np.int64
@@ -45,9 +46,12 @@ class Base_Agent(object):
             self.max_steps_per_episode = self.environment.spec._max_episode_steps
         self.total_episode_score_so_far = 0
         self.game_full_episode_scores = []
+        self.game_full_episode_steps = []
         self.rolling_results = []
+        self.rolling_steps = []
         self.max_rolling_score_seen = float("-inf")
         self.max_episode_score_seen = float("-inf")
+        self.max_rolling_steps_seen = float("-inf")
         self.episode_number = 0
         self.device = "cuda:0" if config.use_GPU else "cpu"
         self.visualise_results_boolean = config.visualise_individual_results
@@ -219,7 +223,6 @@ class Base_Agent(object):
         self.reward = None
         self.done = False
         self.total_episode_score_so_far = 0
-        self.actions_chosen = np.array([0, 0, 0, 0, 0])
         self.episode_states = []
         self.episode_rewards = []
         self.episode_actions = []
@@ -266,12 +269,11 @@ class Base_Agent(object):
         if self.episode_step_number_val >= self.environment._max_episode_steps:
             self.done = True
         self.total_episode_score_so_far += self.reward
-        self.actions_chosen[np.argmax(self.action)] += 1
         if self.config.render_env:
             time.sleep(0.05)
             self.environment.render()
             print(f"Episode {self.episode_number}")
-            print(f"Action {self.action}")
+            print(f"Action {self.action.argmax(axis=1)}")
             print(f"Score {round(self.total_episode_score_so_far[0], 1)}")
         if self.hyperparameters["clip_rewards"]:
             self.reward = max(min(self.reward, 1.0), -1.0)
@@ -284,9 +286,14 @@ class Base_Agent(object):
 
     def save_result(self):
         """Saves the result of an episode of the game"""
-        self.game_full_episode_scores.append(self.total_episode_score_so_far)
+        self.game_full_episode_scores.append(self.total_episode_score_so_far.sum())
+        self.game_full_episode_steps.append(self.episode_step_number_val)
+
         self.rolling_results.append(
             np.mean(self.game_full_episode_scores[-1 * self.rolling_score_window :])
+        )
+        self.rolling_steps.append(
+            np.mean(self.game_full_episode_steps[-1 * self.rolling_score_window :])
         )
         self.save_max_result_seen()
 
@@ -298,10 +305,13 @@ class Base_Agent(object):
         if self.rolling_results[-1] > self.max_rolling_score_seen:
             self.max_rolling_score_seen = self.rolling_results[-1]
 
+        if self.rolling_steps[-1] > self.max_rolling_steps_seen:
+            self.max_rolling_steps_seen = self.rolling_steps[-1]
+
     def print_rolling_result(self):
         """Prints out the latest episode results"""
         print(
-            f"\r Episode {len(self.game_full_episode_scores)}, Score: {self.game_full_episode_scores[-1].item(): .2f}, Max score seen: {self.max_episode_score_seen.item(): .2f}, Rolling score: {self.rolling_results[-1]: .2f}, Max rolling score seen: {self.max_rolling_score_seen: .2f}"
+            f"\r Episode {len(self.game_full_episode_scores)}, Steps: {self.episode_step_number_val}, Score: {self.game_full_episode_scores[-1].sum(): .2f}, Max score seen: {self.max_episode_score_seen.sum(): .2f}, Rolling score: {self.rolling_results[-1]: .2f}, Max rolling score seen: {self.max_rolling_score_seen: .2f}"
         )
 
     def log_to_tensorboard(self):
@@ -318,25 +328,10 @@ class Base_Agent(object):
             "MaxRollingScoreSeen", self.max_rolling_score_seen, self.episode_number + 1
         )
         self.tensorboard_writer.add_scalar(
-            "Steps", self.game_full_episode_scores[-1] / -0.05, self.episode_number + 1
+            "Steps", self.episode_step_number_val, self.episode_number + 1
         )
         self.tensorboard_writer.add_scalar(
-            "RollingSteps", self.rolling_results[-1] / -0.05, self.episode_number + 1
-        )
-        self.tensorboard_writer.add_scalar(
-            "Action0", self.actions_chosen[0], self.episode_number + 1
-        )
-        self.tensorboard_writer.add_scalar(
-            "Action1", self.actions_chosen[1], self.episode_number + 1
-        )
-        self.tensorboard_writer.add_scalar(
-            "Action2", self.actions_chosen[2], self.episode_number + 1
-        )
-        self.tensorboard_writer.add_scalar(
-            "Action3", self.actions_chosen[3], self.episode_number + 1
-        )
-        self.tensorboard_writer.add_scalar(
-            "Action4", self.actions_chosen[4], self.episode_number + 1
+            "RollingSteps", self.rolling_steps[-1], self.episode_number + 1
         )
 
     def show_whether_achieved_goal(self):
@@ -400,7 +395,7 @@ class Base_Agent(object):
             experience = (
                 self.state,
                 self.action,
-                self.reward.item(),
+                self.reward,
                 self.next_state,
                 self.done,
             )

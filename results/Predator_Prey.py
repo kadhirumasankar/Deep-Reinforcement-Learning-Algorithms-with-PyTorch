@@ -6,8 +6,6 @@ from os.path import dirname, abspath
 sys.path.append(dirname(dirname(abspath(__file__))))
 import pathlib
 
-from agents.actor_critic_agents.SAC_Discrete import SAC_Discrete
-from agents.DQN_agents.DQN import DQN
 from agents.actor_critic_agents.TD3 import TD3
 from agents.Trainer import Trainer
 from utilities.data_structures.Config import Config
@@ -23,7 +21,7 @@ class PredatorPreyAgent(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Example GCCNet environment random agent")
-    parser.add_argument("--nagents", type=int, default=1, help="Number of agents")
+    parser.add_argument("--nagents", type=int, default=3, help="Number of agents")
     parser.add_argument(
         "--display",
         action="store_true",
