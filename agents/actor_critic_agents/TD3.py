@@ -24,14 +24,14 @@ class TD3(DDPG):
             Base_Agent.copy_model_over(self.critic_local_2, self.critic_target_2)
         else:
             self.critic_local_2 = self.create_NN(
-                input_dim=self.state_size + self.action_size,
-                output_dim=1,
+                input_dim=self.state_size + self.action_size * self.config.nagents,
+                output_dim=self.config.nagents,
                 key_to_use="Critic",
                 override_seed=self.config.seed + 1,
             )
             self.critic_target_2 = self.create_NN(
-                input_dim=self.state_size + self.action_size,
-                output_dim=1,
+                input_dim=self.state_size + self.action_size * self.config.nagents,
+                output_dim=self.config.nagents,
                 key_to_use="Critic",
             )
             Base_Agent.copy_model_over(self.critic_local_2, self.critic_target_2)
@@ -81,11 +81,24 @@ class TD3(DDPG):
             rewards, critic_targets_next, dones
         )
 
+        # TODO: Find a more robust way to do torch.reshape(actions, [256, -1])
         critic_expected_1 = self.critic_local(
-            torch.cat((torch.reshape(states, [-1, self.state_size]), actions), 1)
+            torch.cat(
+                (
+                    torch.reshape(states, [-1, self.state_size]),
+                    torch.reshape(actions, [256, -1]),
+                ),
+                1,
+            )
         )
         critic_expected_2 = self.critic_local_2(
-            torch.cat((torch.reshape(states, [-1, self.state_size]), actions), 1)
+            torch.cat(
+                (
+                    torch.reshape(states, [-1, self.state_size]),
+                    torch.reshape(actions, [256, -1]),
+                ),
+                1,
+            )
         )
 
         critic_loss_1 = functional.mse_loss(critic_expected_1, critic_targets)
